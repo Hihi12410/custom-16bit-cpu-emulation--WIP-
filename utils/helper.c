@@ -1,5 +1,4 @@
 #include "helper.h"
-#include <stdio.h>
 
 memory_image _vm_memory_init(unsigned long size)
 {

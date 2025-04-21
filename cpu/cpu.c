@@ -1,5 +1,5 @@
-#include "utils/helper.h"
-#include "render/render.h"
+#include "../utils/helper.h"
+#include "../render/render.h"
 #include <stdio.h>
 
 
