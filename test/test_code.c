@@ -39,7 +39,7 @@ typedef enum
 
 
 
-int main() 
+int main(int argc, char ** argv) 
 {
     uint8_t bytes[] = 
     {
@@ -50,7 +50,7 @@ int main()
         OP_STM,REG_R0,0x2,0x3,
         OP_NOP
     };
-    FILE * f = fopen("out.bin", "wb");
+    FILE * f = fopen(argv[1], "wb");
     fwrite(bytes, sizeof(uint8_t), 14, f);
     fclose(f);
     return 0;
