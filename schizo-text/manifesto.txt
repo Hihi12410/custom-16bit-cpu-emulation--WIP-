@@ -1,0 +1,40 @@
+--Unary expressions
+0x0000 || 0x0 --> nop
+
+--Binary + store expressions
+0x0001 || 0x1 --> add                              add <reg_a> <reg_b> ---> R0
+0x0010 || 0x2 --> sub                              sub <reg_a> <reg_b> ---> R0
+
+--Register logic
+0x0011 || 0x3 --> ltr (load to register)           ltr <dest_reg> <pointer_literal_low> <pointer_literal_high>   
+0x0100 || 0x4 --> str (store from register)        str <base_reg> <dest_reg>
+0x0101 || 0x5 --> stm (store to memory)            stm <base_reg> <pointer_literal_low> <pointer_literal_high>
+
+--Boolean logic
+0x0110 || 0x6 --> and (logical AND)                and <reg_lhs> <reg_rhs> ---> R0
+0x0111 || 0x7 --> lor (logical OR)                 lor <reg_lhs> <reg_rhs> ---> R0
+0x1000 || 0x8 --> lsh (left shift)                 lsh <reg_base> <ui16_amount_low> <ui16_amount_high> ---> R0
+0x1001 || 0x9 --> rsh (right shift)                rsh <reg_base> <ui16_amount_low> <ui16_amount_high> ---> R0
+0x1010 || 0xA --> not (logical NOT)                not <reg_base> ---> R0
+0x1011 || 0xB --> xor (logical XOR)                xor <reg_lhs> <reg_rhs> ---> R0
+
+--Control flow
+0x1100 || 0xC --> jmp (jump to PC)                 jmp
+0x1101 || 0xD --> jnz (jump to PC if not zero)     jnz <comp_reg>
+0x1110 || 0xE --> spc (set program counter)        spc <reg_base>
+
+//Preload
+0x1111 || 0xF --> stl (store literal)               stl <pointer_literal_low> <pointer_literal_high> <bitfield>
+
+--Registers
+R0 : Accumulator, 32 bit            --> 0x0
+R1 : General purpose, 32 bit        --> 0x1
+R2 : Loop counter, 32 bit           --> 0x2
+R3 : Scratch                        --> 0x3
+R4 : GP                             --> 0x4
+PC : Program counter                --> 0xC
+RF : Flag register                  --> 0xA
+IN : Interrupt register             --> 0xB
+
+--Flags:
+0x0 -> exit, when 0xFF interrupt with 0x00 flag set then the emulator quits.
