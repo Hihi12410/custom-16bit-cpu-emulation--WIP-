@@ -1,0 +1,1 @@
+hexdump ../dump/memdump/latest.bin

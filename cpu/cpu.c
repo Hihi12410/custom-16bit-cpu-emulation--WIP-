@@ -45,6 +45,9 @@ int main(int argc, char ** argv)
         }
 
         ret = exec_word(&reg, &mem, &state);
+        fprintf(stdout ,"\n\nR0 : %d",reg.R0);
+        fprintf(stdout ,"\nR1 : %d",reg.R1);
+        fprintf(stdout ,"\nPC : %d\n",reg.PC);
     }
 
     _vm_error_dump_core(&mem, argv[2]);

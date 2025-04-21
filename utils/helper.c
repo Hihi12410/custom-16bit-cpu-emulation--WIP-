@@ -1,4 +1,6 @@
 #include "helper.h"
+#include <stdint.h>
+#include <stdio.h>
 
 memory_image _vm_memory_init(unsigned long size)
 {
@@ -176,7 +178,7 @@ void combine_word(uint8_t low, uint8_t high, uint16_t  * dword)
 
 int memsto_word(uint16_t address, uint8_t byte, memory_image * memory)
 {
-    if (address >= (memory->vmem_start - memory->content)) 
+    if (address >= (memory->size)) 
     {
         perror("\nOut of bounds memory write!\n");
         return -1;
@@ -187,7 +189,7 @@ int memsto_word(uint16_t address, uint8_t byte, memory_image * memory)
 
 int memsto_dword(uint16_t address, uint16_t byte, memory_image * memory)
 {
-    if (address+1 >= (memory->vmem_start - memory->content)) 
+    if (address+1 >= (memory->size)) 
     {
         perror("\nOut of bounds memory write!\n");
         return -1;
@@ -206,7 +208,7 @@ int memsto_dword(uint16_t address, uint16_t byte, memory_image * memory)
 
 int memload_word(uint16_t address, uint8_t reg, memory_image * memory, reg_map * regm)
 {
-    if (address >= (memory->vmem_start - memory->content)) 
+    if (address >= (memory->size)) 
     {
         perror("\nOut of bounds memory read!\n");
         return -1;
@@ -219,7 +221,7 @@ int memload_word(uint16_t address, uint8_t reg, memory_image * memory, reg_map *
 
 int memload_dword(uint16_t address, uint8_t reg, memory_image * memory, reg_map * regm)
 {
-    if (address+1 >= (memory->vmem_start - memory->content)) 
+    if (address+1 >= (memory->size)) 
     {
         perror("\nOut of bounds memory read!\n");
         return -1;
@@ -235,14 +237,15 @@ int memload_dword(uint16_t address, uint8_t reg, memory_image * memory, reg_map 
 
 int exec_word(reg_map * reg, memory_image * mem, cpu_state * state)
 {
-    printf("\nptr : %ld, val : %x", mem->ptr, mem->content[mem->ptr]);
-    if (mem->ptr >= 100) 
+    printf("\nMemory pointer : %ld, value : %x", mem->ptr, mem->content[mem->ptr]);
+    if (mem->ptr >= 20) 
     {
         return -1;
     } //End of memory
     
     if (state->inword == 0) 
     {
+        state->inword = 1;
         state->sto[0] = mem->content[mem->ptr++];
         state->ptr = 1;
 
@@ -250,57 +253,67 @@ int exec_word(reg_map * reg, memory_image * mem, cpu_state * state)
         switch (state->sto[0]) {
             case OP_NOP: {
                 state->read_left = 0;
-                printf("\n%d", state->read_left);
                 break;
             }
             case OP_ADD:{
                 state->read_left = 2;
-                printf("\n%d", state->read_left);
+                break;
             }
             case OP_SUB : {
                 state->read_left = 2;
+                break;
             }
             case OP_LTR: {
                 state->read_left = 3;
+                break;
             }
             case OP_STR: {
                 state->read_left = 2;
+                break;
             }
             case OP_STM: {
                 state->read_left = 3;
-                printf("\n%d", state->read_left);
+                break;
             }
             case OP_AND: {
                 state->read_left = 2;
+                break;
             }
             case OP_LOR: {
                 state->read_left = 2;
+                break;
             }
             case OP_LSH: {
                 state->read_left = 3;
+                break;
             }
             case OP_RSH: {
                 state->read_left = 3;
+                break;
             }
             case OP_NOT: {
                 state->read_left = 1;
+                break;
             }
             case OP_XOR: {
                 state->read_left = 2;
+                break;
             }
             case OP_JMP: 
             {
                 state->read_left = 0;
+                break;
             }
             case OP_JNZ: 
             {
                 state->read_left = 1;
+                break;
             }
             case OP_STL:{
                 state->read_left = 3;
-                printf("\n%d", state->read_left);
+                break;
             }
-
+            default : 
             printf("\nop : %x , reads left: %d ", state->sto[0], state->read_left);
         }
     }
@@ -311,11 +324,15 @@ int exec_word(reg_map * reg, memory_image * mem, cpu_state * state)
         state->read_left = state->read_left-1;
         return 1;
     }else {
+        printf("\n");
+        for (int i = 0 ; i < state->ptr; ++i) 
+        {
+            printf(" State %d : %x\n", i, state->sto[i]);
+        }
         state->inword = 0;
     }
 
     char op = state->sto[0];
-    printf("\nop : %x", op);
 
     switch (op) {
         case OP_NOP: {
@@ -324,7 +341,6 @@ int exec_word(reg_map * reg, memory_image * mem, cpu_state * state)
         }
         case OP_ADD:{
             reg->R0 = reg_val(state->sto[1], reg) + reg_val(state->sto[2], reg);
-            printf("Adding: R%d + R%d = R0 -> %d + %d = %d\n", state->sto[1], state->sto[2], state->sto[0], state->sto[1], reg->R0);
             reg->PC = mem->ptr;
             return 0;
         }
@@ -355,13 +371,13 @@ int exec_word(reg_map * reg, memory_image * mem, cpu_state * state)
             uint16_t ptr;
             combine_word(state->sto[2], state->sto[3], &ptr);
             memsto_dword(ptr, base_val, mem);
-            printf("\nstored %u to %u\n", base_val, ptr);
             reg->PC = mem->ptr;
             return 0;
         }
         case OP_AND: {
-            uint16_t lhs = state->sto[1];
-            uint16_t rhs = state->sto[2];
+            uint16_t val_lhs = reg_val(state->sto[1], reg);
+            uint16_t val_rhs = reg_val(state->sto[1], reg);
+            reg->R0 = (uint16_t) val_lhs & val_rhs;
             reg->PC = mem->ptr;
             return 0;
         }
@@ -373,7 +389,7 @@ int exec_word(reg_map * reg, memory_image * mem, cpu_state * state)
         }
         case OP_LSH: {
             
-            uint16_t val = state->sto[1];
+            uint16_t val = reg_val(state->sto[1], reg);
             uint16_t amount;
             combine_word(state->sto[2], state->sto[3], &amount);
             reg->PC = mem->ptr;
@@ -381,7 +397,7 @@ int exec_word(reg_map * reg, memory_image * mem, cpu_state * state)
         }
         case OP_RSH: {
             
-            uint16_t val = state->sto[1];
+            uint16_t val = reg_val(state->sto[1], reg);
             uint16_t amount;
             combine_word(state->sto[2], state->sto[3], &amount);
             reg->PC = mem->ptr;
@@ -389,15 +405,15 @@ int exec_word(reg_map * reg, memory_image * mem, cpu_state * state)
         }
         case OP_NOT: {
             
-            uint16_t val = state->sto[1];
+            uint16_t val = reg_val(state->sto[1], reg);
             reg->R0 = (uint16_t)(!val);
             reg->PC = mem->ptr;
             return 0;
         }
         case OP_XOR: {
             
-            uint16_t val = state->sto[1];
-            uint16_t xor_val = state->sto[2];
+            uint16_t val = reg_val(state->sto[1], reg);
+            uint16_t xor_val = reg_val(state->sto[2], reg);
             reg->R0 = (uint16_t)(val ^ xor_val);
             reg->PC = mem->ptr;
             return 0;
@@ -424,6 +440,7 @@ int exec_word(reg_map * reg, memory_image * mem, cpu_state * state)
             uint16_t val;
             combine_word(state->sto[2], state->sto[3], &val);
             reg_sto(state->sto[1], reg, val);
+            reg->PC = mem->ptr;
             return 0;
         }
     }

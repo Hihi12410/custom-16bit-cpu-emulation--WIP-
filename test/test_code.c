@@ -41,17 +41,21 @@ typedef enum
 
 int main(int argc, char ** argv) 
 {
+    uint16_t imm1 = 0x01AF;
+    uint16_t imm2 = 0x0001;
+
     uint8_t bytes[] = 
     {
-        OP_NOP,
-        OP_STL, REG_R1, 0xA,
-        OP_STL, REG_R2, 0x2,
-        OP_ADD, REG_R1, REG_R2,
-        OP_STM,REG_R0,0x2,0x3,
-        OP_NOP
+        OP_NOP,                                 // 0x00
+        OP_STL, REG_R1, imm1 & 0xFF, imm1 >> 8, // This is correct
+        OP_STL, REG_R2, imm2 & 0xFF, imm2 >> 8, // 0x0F 0x02 0x01 0x00
+        OP_ADD, REG_R1, REG_R2,                 // 0x01 0x01 0x02
+        OP_STM, REG_R0, 0x02, 0x03,             // 0x05 0x00 0x02 0x03
+        OP_NOP                                  // 0x00
     };
+
     FILE * f = fopen(argv[1], "wb");
-    fwrite(bytes, sizeof(uint8_t), 14, f);
+    fwrite(bytes, sizeof(uint8_t), sizeof(bytes), f);
     fclose(f);
     return 0;
 
