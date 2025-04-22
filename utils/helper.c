@@ -237,8 +237,7 @@ int memload_dword(uint16_t address, uint8_t reg, memory_image * memory, reg_map 
 
 int exec_word(reg_map * reg, memory_image * mem, cpu_state * state)
 {
-    printf("\nMemory pointer : %ld, value : %x", mem->ptr, mem->content[mem->ptr]);
-    if (mem->ptr >= 20) 
+    if (mem->ptr >= mem->vmem_start - mem->content) 
     {
         return -1;
     } //End of memory
@@ -249,7 +248,6 @@ int exec_word(reg_map * reg, memory_image * mem, cpu_state * state)
         state->sto[0] = mem->content[mem->ptr++];
         state->ptr = 1;
 
-        printf("\n%x is the current opcode.", state->sto[0]);
         switch (state->sto[0]) {
             case OP_NOP: {
                 state->read_left = 0;
@@ -272,7 +270,7 @@ int exec_word(reg_map * reg, memory_image * mem, cpu_state * state)
                 break;
             }
             case OP_STM: {
-                state->read_left = 3;
+                state->read_left = 2;
                 break;
             }
             case OP_AND: {
@@ -313,8 +311,11 @@ int exec_word(reg_map * reg, memory_image * mem, cpu_state * state)
                 state->read_left = 3;
                 break;
             }
+            case OP_SPC:{
+                state->read_left = 1;
+                break;
+            }
             default : 
-            printf("\nop : %x , reads left: %d ", state->sto[0], state->read_left);
         }
     }
 
@@ -324,11 +325,6 @@ int exec_word(reg_map * reg, memory_image * mem, cpu_state * state)
         state->read_left = state->read_left-1;
         return 1;
     }else {
-        printf("\n");
-        for (int i = 0 ; i < state->ptr; ++i) 
-        {
-            printf(" State %d : %x\n", i, state->sto[i]);
-        }
         state->inword = 0;
     }
 
@@ -368,15 +364,14 @@ int exec_word(reg_map * reg, memory_image * mem, cpu_state * state)
         }
         case OP_STM: {
             uint16_t base_val = reg_val(state->sto[1], reg);
-            uint16_t ptr;
-            combine_word(state->sto[2], state->sto[3], &ptr);
+            uint16_t ptr = reg_val(state->sto[2], reg);
             memsto_dword(ptr, base_val, mem);
             reg->PC = mem->ptr;
             return 0;
         }
         case OP_AND: {
             uint16_t val_lhs = reg_val(state->sto[1], reg);
-            uint16_t val_rhs = reg_val(state->sto[1], reg);
+            uint16_t val_rhs = reg_val(state->sto[2], reg);
             reg->R0 = (uint16_t) val_lhs & val_rhs;
             reg->PC = mem->ptr;
             return 0;
@@ -426,13 +421,13 @@ int exec_word(reg_map * reg, memory_image * mem, cpu_state * state)
         }
         case OP_JNZ: 
         {
-            if (state->sto[1] != 0) mem->ptr = reg->PC;
+            if (reg_val(state->sto[1],reg) != 0) mem->ptr = reg->PC;
             reg->PC = mem->ptr;
             return 0;
         }
         case OP_SPC: 
         {
-            mem->ptr = reg->PC;
+            mem->ptr = reg_val(state->sto[1], reg);
             return 0;
         }
         case OP_STL: 

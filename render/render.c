@@ -1,4 +1,7 @@
 #include "render.h"
+#include <SDL2/SDL_video.h>
+#include <stdint.h>
+#include <stdlib.h>
 
 const uint32_t _grayscale_palette[256] = 
 {
@@ -48,42 +51,14 @@ display init_video(unsigned long x_res,unsigned long y_res,unsigned long color_d
     if (SDL_Init(SDL_INIT_VIDEO) < 0) 
     {
         printf("Error initializing SDL! SDL_Error: %s\n", SDL_GetError());
-        return (display) 
-        {
-            0,
-            0,
-            0,
-            (color_table) 
-            {
-                0,
-                0,
-                NULL
-            },
-            (SDL_Renderer*) NULL,
-            (SDL_Window*) NULL,
-            (vram) {0, 0, 0, NULL}
-        };
+        return ERROR_DISP;
     };
     
-    SDL_Window * window = SDL_CreateWindow("Custom CPU emulation", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, x_res, y_res, SDL_WINDOW_SHOWN | SDL_WINDOW_RESIZABLE);
+    SDL_Window * window = SDL_CreateWindow("Custom CPU emulation", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, x_res, y_res, SDL_WINDOW_SHOWN | SDL_WINDOW_RESIZABLE | SDL_WINDOW_FULLSCREEN);
     if (window == NULL) 
     {
         printf("Error initializing Window! SDL_Error: %s\n", SDL_GetError());
-        return (display) 
-        {
-            0,
-            0,
-            0,
-            (color_table) 
-            {
-                0,
-                0,
-                NULL
-            },
-            (SDL_Renderer*) NULL,
-            (SDL_Window*) NULL,
-            (vram) {0, 0, 0, NULL}
-        };
+        return ERROR_DISP;
     }
     SDL_RaiseWindow(window);
 
@@ -94,23 +69,24 @@ display init_video(unsigned long x_res,unsigned long y_res,unsigned long color_d
     if (renderer == NULL) 
     {
         printf("Error initializing renderer! SDL_Error: %s\n", SDL_GetError());
-        return (display) 
-        {
-            0,
-            0,
-            0,
-            (color_table) 
-            {
-                0,
-                0,
-                NULL
-            },
-            (SDL_Renderer*) NULL,
-            (SDL_Window*) NULL,
-            (vram) {0, 0, 0, NULL}
-        };
+        return ERROR_DISP;
     }
 
+    SDL_Texture * tex = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_RGBA8888, SDL_TEXTUREACCESS_STREAMING, x_res, y_res);
+
+    if (tex == NULL) 
+    {
+        printf("Error initializing texture! SDL_Error: %s\n", SDL_GetError());
+        return ERROR_DISP;
+    }
+
+    uint32_t * pix = malloc(sizeof(uint32_t) * x_res * y_res); 
+
+    if (pix == NULL) 
+    {
+        printf("Error allocating memory!\n");
+        return ERROR_DISP;
+    }
     return (display) 
     {
         x_res,
@@ -119,41 +95,37 @@ display init_video(unsigned long x_res,unsigned long y_res,unsigned long color_d
         col_table,
         renderer,
         window,
-        vmem
+        vmem,
+        tex,
+        pix
     };
 }
-void _render(display disp, vram mem) 
+void _render(display * disp, vram mem) 
 {
-    SDL_RenderClear(disp.renderer);
-
-    uint32_t *color_palette = (uint32_t*) disp.col_table.ptr;
+    uint32_t *color_palette = (uint32_t*) disp->col_table.ptr;
     uint8_t *content = (uint8_t*) mem.ptr;
+    unsigned long size = mem.x_size * mem.y_size;
 
-    for (unsigned long y = 0; y < mem.y_size; ++y) 
+    for (unsigned long i = 0; i < size; ++i) 
     {
-        for (unsigned long x = 0; x < mem.x_size; ++x) 
-        {
-            uint8_t pixel_val = content[y * mem.x_size + x];
-            Uint32 color = color_palette[pixel_val];
+        disp->pixel_data[i] = color_palette[content[i]];
+    }
 
-            Uint8 r = (color >> 24) & 0xFF;
-            Uint8 g = (color >> 16) & 0xFF;
-            Uint8 b = (color >> 8) & 0xFF;  
+    SDL_UpdateTexture(disp->tex, NULL, disp->pixel_data, mem.x_size * sizeof(uint32_t));
 
-            SDL_SetRenderDrawColor(disp.renderer, r, g, b, 0xFF);
-            SDL_RenderDrawPoint(disp.renderer, x, y);
-        }
-    }   
-
-    SDL_RenderPresent(disp.renderer);
+    SDL_RenderClear(disp->renderer);
+    SDL_RenderCopy(disp->renderer, disp->tex, NULL, NULL);
+    SDL_RenderPresent(disp->renderer);
 }
 
 void display_cleanup(display disp) 
 {
     SDL_DestroyRenderer(disp.renderer);
     SDL_DestroyWindow(disp.window);
+    SDL_DestroyTexture(disp.tex);
     SDL_Quit();
 
+    free(disp.pixel_data);
     disp.renderer = (SDL_Renderer*)NULL;
     disp.window = (SDL_Window*)NULL;
     disp.x_res = 0;

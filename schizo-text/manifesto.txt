@@ -8,7 +8,7 @@
 --Register logic
 0x0011 || 0x3 --> ltr (load to register)           ltr <dest_reg> <pointer_literal_low> <pointer_literal_high>   
 0x0100 || 0x4 --> str (store from register)        str <base_reg> <dest_reg>
-0x0101 || 0x5 --> stm (store to memory)            stm <base_reg> <pointer_literal_low> <pointer_literal_high>
+0x0101 || 0x5 --> stm (store to memory)            stm <base_reg> <ptr_reg>
 
 --Boolean logic
 0x0110 || 0x6 --> and (logical AND)                and <reg_lhs> <reg_rhs> ---> R0
@@ -35,6 +35,3 @@ R4 : GP                             --> 0x4
 PC : Program counter                --> 0xC
 RF : Flag register                  --> 0xA
 IN : Interrupt register             --> 0xB
-
---Flags:
-0x0 -> exit, when 0xFF interrupt with 0x00 flag set then the emulator quits.

@@ -1,5 +1,6 @@
 #include "../utils/helper.h"
 #include "../render/render.h"
+#include <SDL2/SDL_timer.h>
 #include <stdio.h>
 
 
@@ -34,6 +35,8 @@ int main(int argc, char ** argv)
     SDL_Event e;
     int running = 0;
     int ret = 0;
+    unsigned long renderCounter = 0;
+
     while (running >= 0 && ret >= 0) 
     {
         while (SDL_PollEvent(&e))
@@ -45,9 +48,14 @@ int main(int argc, char ** argv)
         }
 
         ret = exec_word(&reg, &mem, &state);
-        fprintf(stdout ,"\n\nR0 : %d",reg.R0);
-        fprintf(stdout ,"\nR1 : %d",reg.R1);
-        fprintf(stdout ,"\nPC : %d\n",reg.PC);
+
+        if (renderCounter >= INST_PER_FRAME) 
+        {
+            _render(&disp, vmem);
+            renderCounter = 0;
+        }
+        renderCounter++;
+
     }
 
     _vm_error_dump_core(&mem, argv[2]);

@@ -41,17 +41,31 @@ typedef enum
 
 int main(int argc, char ** argv) 
 {
-    uint16_t imm1 = 0x01AF;
-    uint16_t imm2 = 0x0001;
+    uint16_t color = 0xFFFF;
+    uint16_t vmem_addr = 0x8000;
+    uint16_t one = 2;
+    uint16_t mem_size = 65533;
+    uint16_t loop_start = 24;
 
     uint8_t bytes[] = 
     {
-        OP_NOP,                                 // 0x00
-        OP_STL, REG_R1, imm1 & 0xFF, imm1 >> 8, // This is correct
-        OP_STL, REG_R2, imm2 & 0xFF, imm2 >> 8, // 0x0F 0x02 0x01 0x00
-        OP_ADD, REG_R1, REG_R2,                 // 0x01 0x01 0x02
-        OP_STM, REG_R0, 0x02, 0x03,             // 0x05 0x00 0x02 0x03
-        OP_NOP                                  // 0x00
+        OP_STL, REG_R1, 0, 0,                                                  //Reset counter
+        OP_STL, REG_R2, color & 0xFF, color >> 8,                              //Store color
+        OP_STL, REG_R3, one & 0xFF,one >> 8,                                 //Inc reg
+        OP_STL, REG_R4, vmem_addr & 0xFF, vmem_addr >> 8,                  //vmem start addr
+        OP_STL, REG_RF, mem_size & 0xFF, mem_size >> 8,                    //Max mem size
+        OP_STL, REG_IN, loop_start & 0xFF, loop_start>>8,                  //Set loop start point
+
+        OP_STM, REG_R4, REG_R4,                                                 //Set pixel color
+        OP_ADD, REG_R3, REG_R4,                                                 //Imcrement pixel  
+        OP_STR, REG_R4, REG_R0,                                                 //Store pointer to next pixel
+        OP_SUB, REG_R4, REG_RF,
+        OP_NOT, REG_R0,
+        OP_JNZ, REG_R0,
+        
+        OP_SPC, REG_IN,
+        OP_JNZ, REG_R0
+
     };
 
     FILE * f = fopen(argv[1], "wb");

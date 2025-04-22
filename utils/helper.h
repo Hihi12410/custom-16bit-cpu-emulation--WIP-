@@ -10,7 +10,8 @@
 #define RES_X 256
 #define RES_Y 128
 
-#define CLOCK_SPEED 500//hz
+#define CLOCK_SPEED 10
+#define INST_PER_FRAME 1000
 
 typedef struct 
 {
