@@ -74,9 +74,3 @@ int main(int argc, char ** argv)
     return 0;
 
 }
-
-/*0xA + 0x2 = C
-
-c -> 1100
-
-1110*/
